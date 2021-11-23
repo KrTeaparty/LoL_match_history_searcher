@@ -1,33 +1,31 @@
 import requests as req
 import json
+import time
+from tqdm import tqdm
 
 class League_of_Legend():
     def __init__(self, s_name):
-        self.api_key = '내 API 키'
-        self.summoner_name = s_name
+        self.api_key = '내 api key'
+        self.get_summoner_information(s_name)
         self.make_champion_name_key_dict()
-
-        URL = 'https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/' + self.summoner_name
+        self.page = 0
+        self.match_page = {}
+        self.match_info_dict = {}
+        
+    def get_summoner_information(self, name):
+        URL = 'https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/' + name
         res = req.get(URL, headers = {'X-Riot-Token': self.api_key})
+        print(res.status_code)
         if res.status_code == 200:
             self.valid_name = 1
             resobj = json.loads(res.text)
-            self.encrypted_id = resobj['id']
+            self.summoner_info = resobj     
         else:
             self.valid_name = 0
-
-    def get_info_by_summoner_name(self):
-        URL = 'https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/' + self.summoner_name
-        res = req.get(URL, headers = {'X-Riot-Token': self.api_key})
-        if res.status_code == 200:
-            resobj = json.loads(res.text)
-            print('소환사레벨 : ', resobj['summonerLevel'])
-            self.encrypted_id = resobj['id']      
-        else:
-            print('No summoner')
+            print('No such summoner')
 
     def get_champion_mastery(self):
-        URL = 'https://kr.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/' + self.encrypted_id
+        URL = 'https://kr.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/' + self.summoner_info['id']
         res = req.get(URL, headers = {'X-Riot-Token': self.api_key})
         if res.status_code == 200:
             resobj = json.loads(res.text)
@@ -49,3 +47,34 @@ class League_of_Legend():
             champion_info = json.loads(champion_js)
         self.champion_name_key_dict = {champion_info['data'][k]['key']:champion_info['data'][k]['id'] for k in champion_info['data']}
 
+    def get_match_list(self, start, count=20):
+        URL = 'https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/' + self.summoner_info['puuid'] + '/ids?start=' + str(start) + '&count=' + str(count)
+        res = req.get(URL, headers = {'X-Riot-Token': self.api_key})
+        if res.status_code == 200:
+            self.match_list = json.loads(res.text)
+        else:
+            print('No Match Found')
+
+    def get_match_information(self): # memorization을 활용하여 전 페이지로 이동시 추가 요청을 하지 않도록 추가할 것 / 11월 11일의 TIL 확인
+        self.get_match_list(self.page)
+        for i in tqdm(self.match_list):
+            URL = 'https://asia.api.riotgames.com/lol/match/v5/matches/' + i
+            res = req.get(URL, headers = {'X-Riot-Token': self.api_key})
+            resobj = json.loads(res.text)
+            self.match_info_dict[i] = resobj
+        
+        # 나중에 gui 구성할 때 페이지로 정보 저장해서 memorization 활용
+        # self.match_page[self.page] = self.match_info_dict
+
+        cnt = 0
+        for i in self.match_list:
+            print(f'''
+{cnt + 1}번째 판
+게임모드 : {self.match_info_dict[i]["info"]["gameMode"]}
+게임시간 : {str(round(self.match_info_dict[i]["info"]["gameDuration"] / 60, 2)) + "분"}
+게임승패 : {"승리" if self.match_info_dict[i]["info"]["teams"][0]["win"] == True else "패배"}
+''')
+            cnt += 1
+
+    def next_page(self):
+        self.page += 1
