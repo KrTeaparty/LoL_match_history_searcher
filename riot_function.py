@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 class League_of_Legend():
     def __init__(self, s_name):
-        self.api_key = '내 api key'
+        self.api_key = '내 API key'
         self.get_summoner_information(s_name)
         self.make_champion_name_key_dict()
         self.page = 0
