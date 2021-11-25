@@ -5,36 +5,45 @@ from tqdm import tqdm
 
 class League_of_Legend():
     def __init__(self, s_name):
-        self.api_key = '내 API key'
+        self.api_key = '내 api key'
         self.get_summoner_information(s_name)
         self.make_champion_name_key_dict()
         self.page = 0
         self.match_page = {}
         self.match_info_dict = {}
+
+    def req_api(self, URL):
+        res = req.get(URL, headers = {'X-Riot-Token': self.api_key})
+
+        if res.status_code != 200:
+            if res.status_code == 429:
+                print(res.status_code)
+                time.sleep(150)
+                return res.status_code
+            else:
+                print(res.status_code)
+                time.sleep(1)
+                return res.status_code
+        else:
+            time.sleep(0.6)
+            return res.json()
         
     def get_summoner_information(self, name):
         URL = 'https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/' + name
-        res = req.get(URL, headers = {'X-Riot-Token': self.api_key})
-        print(res.status_code)
-        if res.status_code == 200:
+        res = self.req_api(URL)
+        if type(res) != int:
             self.valid_name = 1
-            resobj = json.loads(res.text)
-            self.summoner_info = resobj     
+            self.summoner_info = res
         else:
             self.valid_name = 0
             print('No such summoner')
 
     def get_champion_mastery(self):
         URL = 'https://kr.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/' + self.summoner_info['id']
-        res = req.get(URL, headers = {'X-Riot-Token': self.api_key})
-        if res.status_code == 200:
-            resobj = json.loads(res.text)
-            with open('./riot_data/champion.json', 'r', encoding = 'utf-8') as f:
-                champion_js = f.read()
-                champion_info = json.loads(champion_js)
-
+        res = self.req_api(URL)
+        if type(res) != int:
             for i in range(3):
-                print(champion_info['data'][self.champion_name_key_dict[str(resobj[i]['championId'])]]['name'], end=' ')
+                print(self.champion_data['data'][self.champion_name_key_dict[str(res[i]['championId'])]]['name'], end=' ')
                 
 
 
@@ -42,16 +51,14 @@ class League_of_Legend():
     # 챔피언의 키 값을 딕셔너리의 key로, 챔피언의 영문명을 value로 만들어서 관리한다.
     # Riot API에서는 champion을 다룰 때 챔피언의 이름보다 key로 요청은 주는 경우가 많아서 이렇게 지정한다.
     def make_champion_name_key_dict(self):
-        with open('./riot_data/champion.json', 'r', encoding = 'utf-8') as f:
-            champion_js = f.read()
-            champion_info = json.loads(champion_js)
-        self.champion_name_key_dict = {champion_info['data'][k]['key']:champion_info['data'][k]['id'] for k in champion_info['data']}
+        self.champion_data = req.get('http://ddragon.leagueoflegends.com/cdn/11.23.1/data/ko_KR/champion.json').json()
+        self.champion_name_key_dict = {self.champion_data['data'][k]['key']:self.champion_data['data'][k]['id'] for k in self.champion_data['data']}
 
     def get_match_list(self, start, count=20):
         URL = 'https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/' + self.summoner_info['puuid'] + '/ids?start=' + str(start) + '&count=' + str(count)
-        res = req.get(URL, headers = {'X-Riot-Token': self.api_key})
-        if res.status_code == 200:
-            self.match_list = json.loads(res.text)
+        res = self.req_api(URL)
+        if type(res) != int:
+            self.match_list = res
         else:
             print('No Match Found')
 
@@ -59,22 +66,18 @@ class League_of_Legend():
         self.get_match_list(self.page)
         for i in tqdm(self.match_list):
             URL = 'https://asia.api.riotgames.com/lol/match/v5/matches/' + i
-            res = req.get(URL, headers = {'X-Riot-Token': self.api_key})
-            resobj = json.loads(res.text)
-            self.match_info_dict[i] = resobj
+            res = self.req_api(URL)
+            self.match_info_dict[i] = res
         
         # 나중에 gui 구성할 때 페이지로 정보 저장해서 memorization 활용
         # self.match_page[self.page] = self.match_info_dict
 
-        cnt = 0
-        for i in self.match_list:
-            print(f'''
-{cnt + 1}번째 판
-게임모드 : {self.match_info_dict[i]["info"]["gameMode"]}
-게임시간 : {str(round(self.match_info_dict[i]["info"]["gameDuration"] / 60, 2)) + "분"}
-게임승패 : {"승리" if self.match_info_dict[i]["info"]["teams"][0]["win"] == True else "패배"}
-''')
-            cnt += 1
-
-    def next_page(self):
-        self.page += 1
+#         cnt = 0
+#         for i in self.match_list:
+#             print(f'''
+# {cnt + 1}번째 판
+# 게임모드 : {self.match_info_dict[i]["info"]["gameMode"]}
+# 게임시간 : {str(round(self.match_info_dict[i]["info"]["gameDuration"] / 60, 2)) + "분"}
+# 게임승패 : {"승리" if self.match_info_dict[i]["info"]["teams"][0]["win"] == True else "패배"}
+# ''')
+#             cnt += 1
