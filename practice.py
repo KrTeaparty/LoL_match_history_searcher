@@ -26,6 +26,7 @@ while(1):
 '''))
         if menu == 1:
             l_class.get_match_information()
+            l_class.visualize_match()
         elif menu == 2:
             l_class.get_champion_mastery()
         else:

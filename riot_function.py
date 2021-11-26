@@ -2,6 +2,7 @@ import requests as req
 import json
 import time
 from tqdm import tqdm
+import pandas as pd
 
 class League_of_Legend():
     def __init__(self, s_name):
@@ -54,7 +55,7 @@ class League_of_Legend():
         self.champion_data = req.get('http://ddragon.leagueoflegends.com/cdn/11.23.1/data/ko_KR/champion.json').json()
         self.champion_name_key_dict = {self.champion_data['data'][k]['key']:self.champion_data['data'][k]['id'] for k in self.champion_data['data']}
 
-    def get_match_list(self, start, count=20):
+    def get_match_list(self, start, count=1):
         URL = 'https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/' + self.summoner_info['puuid'] + '/ids?start=' + str(start) + '&count=' + str(count)
         res = self.req_api(URL)
         if type(res) != int:
@@ -81,3 +82,22 @@ class League_of_Legend():
 # 게임승패 : {"승리" if self.match_info_dict[i]["info"]["teams"][0]["win"] == True else "패배"}
 # ''')
 #             cnt += 1
+    def visualize_match(self):
+        for i in self.match_info_dict:
+            game_details = []
+            match_result = self.match_info_dict[i]['info']['teams'][0]['win']
+            print("승리" if match_result else "패배")
+            for j in self.match_info_dict[i]['info']['participants']:
+                person_details = {}
+                person_details['Name'] = j['summonerName']
+                person_details['Champion_Level'] = j['champLevel']
+                person_details['champName'] = j['championName']
+                person_details['kills'] = j['kills']
+                person_details['deaths'] = j['deaths']
+                person_details['Assists'] = j['assists']
+                person_details['KDA'] = round((j['kills'] + j['assists']) / j['deaths'], 2)
+                person_details['Dealt_damage'] = j['totalDamageDealtToChampions']
+                person_details['CS'] = j['totalMinionsKilled']
+                game_details.append(person_details)
+            df = pd.DataFrame(game_details)
+            print(df)
