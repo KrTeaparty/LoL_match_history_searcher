@@ -3,11 +3,13 @@ import json
 import time
 from tqdm import tqdm
 import pandas as pd
+import sys
+from PyQt5.QtWidgets import *
+from PyQt5 import uic
 
 class League_of_Legend():
-    def __init__(self, s_name):
+    def __init__(self):
         self.api_key = '내 api key'
-        self.get_summoner_information(s_name)
         self.make_champion_name_key_dict()
         self.page = 0
         self.match_page = {}
@@ -37,7 +39,6 @@ class League_of_Legend():
             self.summoner_info = res
         else:
             self.valid_name = 0
-            print('No such summoner')
 
     def get_champion_mastery(self):
         URL = 'https://kr.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/' + self.summoner_info['id']
@@ -63,9 +64,9 @@ class League_of_Legend():
         else:
             print('No Match Found')
 
-    def get_match_information(self): # memorization을 활용하여 전 페이지로 이동시 추가 요청을 하지 않도록 추가할 것 / 11월 11일의 TIL 확인
+    def get_match_information(self, name): # memorization을 활용하여 전 페이지로 이동시 추가 요청을 하지 않도록 추가할 것 / 11월 11일의 TIL 확인
         self.get_match_list(self.page)
-        for i in tqdm(self.match_list):
+        for i in self.match_list:
             URL = 'https://asia.api.riotgames.com/lol/match/v5/matches/' + i
             res = self.req_api(URL)
             self.match_info_dict[i] = res
@@ -82,6 +83,8 @@ class League_of_Legend():
 # 게임승패 : {"승리" if self.match_info_dict[i]["info"]["teams"][0]["win"] == True else "패배"}
 # ''')
 #             cnt += 1
+
+    # 데이터 전처리 함수로 조금 더 개선하자
     def visualize_match(self):
         for i in self.match_info_dict:
             game_details = []
@@ -100,4 +103,3 @@ class League_of_Legend():
                 person_details['CS'] = j['totalMinionsKilled']
                 game_details.append(person_details)
             df = pd.DataFrame(game_details)
-            print(df)
