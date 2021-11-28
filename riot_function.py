@@ -10,6 +10,7 @@ from PyQt5 import uic
 class League_of_Legend():
     def __init__(self):
         self.api_key = '내 api key'
+        self.valid_name = 0
         self.make_champion_name_key_dict()
         self.page = 0
         self.match_page = {}
@@ -56,7 +57,7 @@ class League_of_Legend():
         self.champion_data = req.get('http://ddragon.leagueoflegends.com/cdn/11.23.1/data/ko_KR/champion.json').json()
         self.champion_name_key_dict = {self.champion_data['data'][k]['key']:self.champion_data['data'][k]['id'] for k in self.champion_data['data']}
 
-    def get_match_list(self, start, count=1):
+    def get_match_list(self, start, count=3):
         URL = 'https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/' + self.summoner_info['puuid'] + '/ids?start=' + str(start) + '&count=' + str(count)
         res = self.req_api(URL)
         if type(res) != int:
@@ -85,21 +86,21 @@ class League_of_Legend():
 #             cnt += 1
 
     # 데이터 전처리 함수로 조금 더 개선하자
-    def visualize_match(self):
+    def make_match_data(self):
+        self.game_detail_data = {}
         for i in self.match_info_dict:
-            game_details = []
-            match_result = self.match_info_dict[i]['info']['teams'][0]['win']
-            print("승리" if match_result else "패배")
+            game_details = {}
             for j in self.match_info_dict[i]['info']['participants']:
                 person_details = {}
-                person_details['Name'] = j['summonerName']
                 person_details['Champion_Level'] = j['champLevel']
                 person_details['champName'] = j['championName']
                 person_details['kills'] = j['kills']
                 person_details['deaths'] = j['deaths']
-                person_details['Assists'] = j['assists']
+                person_details['assists'] = j['assists']
                 person_details['KDA'] = round((j['kills'] + j['assists']) / j['deaths'], 2)
                 person_details['Dealt_damage'] = j['totalDamageDealtToChampions']
                 person_details['CS'] = j['totalMinionsKilled']
-                game_details.append(person_details)
-            df = pd.DataFrame(game_details)
+                person_details['match_result'] =  j['win']
+
+                game_details[j['summonerName']] = person_details
+            self.game_detail_data[i] = game_details
