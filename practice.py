@@ -26,9 +26,10 @@ class WindowClass(QMainWindow, Main_Window):
             self.l.get_summoner_information(self.SummonerName.text())
 
         if self.l.valid_name == 0:
-            self.ResultTable.setItem(0, 0, QTableWidgetItem("해당하는 소환사가 없습니다."))
+            self.StatusLabel.setText('해당하는 소환사가 없습니다.')
             self.SummonerName.clear()
         else:
+            self.StatusLabel.setText(self.l.summoner_info['name'] + '님의 전적을 검색합니다.')
             self.l.get_match_information(self.l.summoner_info['name'])
             column_headers = ['승패', '챔피언', '게임모드','킬', '데스', '어시', 'KDA', '게임시간']
             self.l.make_match_data()
@@ -38,8 +39,7 @@ class WindowClass(QMainWindow, Main_Window):
             self.ResultTable.setColumnCount(len(column_headers))
             self.ResultTable.setHorizontalHeaderLabels(column_headers)
             row = 0
-            # 어차피 이렇게 가져올거면 그냥 애초에 각 게임의 상세 내역을 visualize_match 함수로 만들어 버리는 것은 어떤가?
-            # 그러면 쓸모 없이 안보는 게임의 상세 내역도 처리해서 비효율적이지 않을까?
+            
             for i in self.l.match_info_dict:
                 temp_list[2] = self.l.match_info_dict[i]['info']['gameMode']
                 temp_list[7] = str(self.l.match_info_dict[i]['info']['gameDuration'] // 60) + '분 ' + str(self.l.match_info_dict[i]['info']['gameDuration'] % 60) + '초'
@@ -55,47 +55,38 @@ class WindowClass(QMainWindow, Main_Window):
                 for k, v in enumerate(temp_list):
                     self.ResultTable.setItem(row, k, QTableWidgetItem(str(v)))
                 row += 1
-            self.ResultTable.resizeColumnsToContents()
-            self.ResultTable.resizeRowsToContents()
+            self.ResultTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)   # column 너비 조정
+            self.ResultTable.resizeRowsToContents()                                         # 열 높이 조정
+            self.StatusLabel.setText(self.l.summoner_info['name'] + '님의 전적 검색이 완료되었습니다.')
 
     def display_mastery(self):
-        pass
+        if self.l.valid_name == 1:
+            pass
+        else:
+            self.l.get_summoner_information(self.SummonerName.text())
+
+        if self.l.valid_name == 0:
+            self.StatusLabel.setText('해당하는 소환사가 없습니다.')
+            self.SummonerName.clear()
+        else:
+            self.StatusLabel.setText(self.l.summoner_info['name'] + '님의 숙련도를 가져오고 있습니다.')
+            self.l.get_champion_mastery()
+            column_headers = ['챔피언', '숙련도 레벨', '숙련도 점수']
+
+            self.ResultTable.setRowCount(len(self.l.champ_mastery))
+            self.ResultTable.setColumnCount(len(column_headers))
+            self.ResultTable.setHorizontalHeaderLabels(column_headers)
+
+            for i in range(len(self.l.champ_mastery)):
+                self.ResultTable.setItem(i, 0, QTableWidgetItem(self.l.champion_name_key_dict[str(self.l.champ_mastery[i]['championId'])]['ko']))
+                self.ResultTable.setItem(i, 1, QTableWidgetItem(str(self.l.champ_mastery[i]['championLevel'])))
+                self.ResultTable.setItem(i, 2, QTableWidgetItem(str(self.l.champ_mastery[i]['championPoints'])))
+            self.ResultTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)   # column 너비 조정
+            self.ResultTable.resizeRowsToContents()                                         # 열 높이 조정
+            self.StatusLabel.setText(self.l.summoner_info['name'] + '님의 숙련도를 가져왔습니다.')
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     main_W = WindowClass()
     sys.exit(app.exec_())
-
-        
-
-
-
-
-"""
-while(1):
-    summoner_name = input('정보를 검색할 소환사명 입력 (검색 종료를 원할시 q입력) : ')
-
-    if summoner_name == 'q':
-        break
-
-    l_class = rf.League_of_Legend(summoner_name)
-
-    if l_class.valid_name == 0:
-        continue
-
-    while(1):
-        menu = int(input('''
-메뉴를 골라주세요.
-
-1. 전적 검색
-2. 챔피언 숙련도 보기
-3. 종료
-'''))
-        if menu == 1:
-            l_class.get_match_information()
-            l_class.visualize_match()
-        elif menu == 2:
-            l_class.get_champion_mastery()
-        else:
-            break
-"""

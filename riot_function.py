@@ -9,7 +9,7 @@ from PyQt5 import uic
 
 class League_of_Legend():
     def __init__(self):
-        self.api_key = '내 api key'
+        self.api_key = '내 API key'
         self.valid_name = 0
         self.make_champion_name_key_dict()
         self.page = 0
@@ -45,8 +45,7 @@ class League_of_Legend():
         URL = 'https://kr.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/' + self.summoner_info['id']
         res = self.req_api(URL)
         if type(res) != int:
-            for i in range(3):
-                print(self.champion_data['data'][self.champion_name_key_dict[str(res[i]['championId'])]]['name'], end=' ')
+            self.champ_mastery = res
                 
 
 
@@ -55,7 +54,7 @@ class League_of_Legend():
     # Riot API에서는 champion을 다룰 때 챔피언의 이름보다 key로 요청은 주는 경우가 많아서 이렇게 지정한다.
     def make_champion_name_key_dict(self):
         self.champion_data = req.get('http://ddragon.leagueoflegends.com/cdn/11.23.1/data/ko_KR/champion.json').json()
-        self.champion_name_key_dict = {self.champion_data['data'][k]['key']:self.champion_data['data'][k]['id'] for k in self.champion_data['data']}
+        self.champion_name_key_dict = {self.champion_data['data'][k]['key']:{'en':self.champion_data['data'][k]['id'], 'ko':self.champion_data['data'][k]['name']} for k in self.champion_data['data']}
 
     def get_match_list(self, start, count=3):
         URL = 'https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/' + self.summoner_info['puuid'] + '/ids?start=' + str(start) + '&count=' + str(count)
@@ -93,7 +92,7 @@ class League_of_Legend():
             for j in self.match_info_dict[i]['info']['participants']:
                 person_details = {}
                 person_details['Champion_Level'] = j['champLevel']
-                person_details['champName'] = j['championName']
+                person_details['champName'] = self.champion_name_key_dict[str(j['championId'])]['ko']
                 person_details['kills'] = j['kills']
                 person_details['deaths'] = j['deaths']
                 person_details['assists'] = j['assists']
