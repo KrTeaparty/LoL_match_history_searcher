@@ -3,20 +3,63 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5 import uic
 from PyQt5.QtCore import *
+from matplotlib.backends.backend_qt5agg import FigureCanvas as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 
-Main_Window = uic.loadUiType('Main_window.ui')[0]
-
-class WindowClass(QMainWindow, Main_Window):
+class WindowClass(QWidget):
     def __init__(self):
         super().__init__()
         self.l = rf.League_of_Legend()
-        self.setupUi(self)
-        self.SearchButton.clicked.connect(self.display_match)
-        self.MasteryButton.clicked.connect(self.display_mastery)
+        self.setupUI()
         self.show()
     
     def setupUI(self):
-        self.setupUi(self)
+        #self.setupUi(self)
+        self.setGeometry(600, 200, 1200, 600)
+        self.setWindowTitle('LoL 전적 검색기')
+        
+        self.SummonerName = QLineEdit()
+        self.ResetButton = QPushButton('초기화')
+        self.SearchButton = QPushButton('전적 검색')
+        self.MasteryButton = QPushButton('숙련도 확인')
+        self.ResultTable = QTableWidget()
+        self.StatusLabel = QLabel()
+
+        # 이벤트 추가
+        self.SearchButton.clicked.connect(self.display_match)
+        self.MasteryButton.clicked.connect(self.display_mastery)
+
+        # 그래프 캔버스
+        self.fig = plt.Figure()
+        self.canvas = FigureCanvas(self.fig)      
+        
+        # 좌측 레이아웃
+        leftLayout = QVBoxLayout()
+        leftLayout.addWidget(self.SummonerName)
+        leftLayout.addWidget(self.ResultTable)
+        
+
+        # 우측 레이아웃
+        rightLayout = QVBoxLayout()
+        rightLayout_Button = QHBoxLayout()
+        rightLayout_Fig = QVBoxLayout()
+        rightLayout_Button.addWidget(self.ResetButton)
+        rightLayout_Button.addWidget(self.SearchButton)
+        rightLayout_Button.addWidget(self.MasteryButton)
+        rightLayout_Fig.addWidget(self.StatusLabel)
+        rightLayout_Fig.addWidget(self.canvas)
+        rightLayout.addLayout(rightLayout_Button)
+        rightLayout.addLayout(rightLayout_Fig)
+
+        # 전체 레이아웃
+        layout = QHBoxLayout()
+        layout.addLayout(leftLayout)
+        layout.addLayout(rightLayout)
+        
+        self.setLayout(layout)
+
 
     def display_match(self):
         # 이전에 가지고 온 소환사 정보가 있으면 다시 가져오지 않고 기존 소환사 정보 사용
@@ -29,10 +72,9 @@ class WindowClass(QMainWindow, Main_Window):
             self.StatusLabel.setText('해당하는 소환사가 없습니다.')
             self.SummonerName.clear()
         else:
-            self.StatusLabel.setText(self.l.summoner_info['name'] + '님의 전적을 검색합니다.')
+            self.StatusLabel.setText(self.l.summoner_info['name'] + '님의 전적을 검색합니다.') # 이 부분이 작동하는지 모르겠음
             self.l.get_match_information(self.l.summoner_info['name'])
             column_headers = ['승패', '챔피언', '게임모드','킬', '데스', '어시', 'KDA', '게임시간']
-            self.l.make_match_data()
             temp_list = [0 for i in range(len(column_headers))]
 
             self.ResultTable.setRowCount(len(self.l.match_list))
@@ -51,12 +93,13 @@ class WindowClass(QMainWindow, Main_Window):
                         temp_list[4] = self.l.game_detail_data[i][j]['deaths']
                         temp_list[5] = self.l.game_detail_data[i][j]['assists']
                         temp_list[6] = self.l.game_detail_data[i][j]['KDA']
-                print(temp_list)
+                #print(temp_list)
                 for k, v in enumerate(temp_list):
                     self.ResultTable.setItem(row, k, QTableWidgetItem(str(v)))
                 row += 1
             self.ResultTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)   # column 너비 조정
             self.ResultTable.resizeRowsToContents()                                         # 열 높이 조정
+            self.display_figure()
             self.StatusLabel.setText(self.l.summoner_info['name'] + '님의 전적 검색이 완료되었습니다.')
 
     def display_mastery(self):
@@ -84,6 +127,12 @@ class WindowClass(QMainWindow, Main_Window):
             self.ResultTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)   # column 너비 조정
             self.ResultTable.resizeRowsToContents()                                         # 열 높이 조정
             self.StatusLabel.setText(self.l.summoner_info['name'] + '님의 숙련도를 가져왔습니다.')
+    
+    def display_figure(self):
+        ax = self.fig.add_subplot()
+        ax.pie(x = [self.l.win_rate, 1 - self.l.win_rate], labels = ['Win', 'Lose'], autopct='%.2f%%', colors = ['skyblue','lightcoral'], startangle = 90)
+        ax.axis('equal')
+        self.canvas.draw()
 
 
 if __name__ == "__main__":

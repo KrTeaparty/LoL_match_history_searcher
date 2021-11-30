@@ -31,8 +31,8 @@
     <property name="geometry">
      <rect>
       <x>660</x>
-      <y>140</y>
-      <width>121</width>
+      <y>130</y>
+      <width>111</width>
       <height>61</height>
      </rect>
     </property>
@@ -53,9 +53,9 @@
    <widget class="QPushButton" name="ResetButton">
     <property name="geometry">
      <rect>
-      <x>640</x>
+      <x>660</x>
       <y>10</y>
-      <width>141</width>
+      <width>111</width>
       <height>41</height>
      </rect>
     </property>

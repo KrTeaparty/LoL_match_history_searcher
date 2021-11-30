@@ -9,7 +9,7 @@ from PyQt5 import uic
 
 class League_of_Legend():
     def __init__(self):
-        self.api_key = '내 API key'
+        self.api_key = '내 api key'
         self.valid_name = 0
         self.make_champion_name_key_dict()
         self.page = 0
@@ -56,7 +56,7 @@ class League_of_Legend():
         self.champion_data = req.get('http://ddragon.leagueoflegends.com/cdn/11.23.1/data/ko_KR/champion.json').json()
         self.champion_name_key_dict = {self.champion_data['data'][k]['key']:{'en':self.champion_data['data'][k]['id'], 'ko':self.champion_data['data'][k]['name']} for k in self.champion_data['data']}
 
-    def get_match_list(self, start, count=3):
+    def get_match_list(self, start, count=20):
         URL = 'https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/' + self.summoner_info['puuid'] + '/ids?start=' + str(start) + '&count=' + str(count)
         res = self.req_api(URL)
         if type(res) != int:
@@ -70,6 +70,8 @@ class League_of_Legend():
             URL = 'https://asia.api.riotgames.com/lol/match/v5/matches/' + i
             res = self.req_api(URL)
             self.match_info_dict[i] = res
+        self.make_match_data()
+        self.calculate_win_rate()
         
         # 나중에 gui 구성할 때 페이지로 정보 저장해서 memorization 활용
         # self.match_page[self.page] = self.match_info_dict
@@ -96,10 +98,20 @@ class League_of_Legend():
                 person_details['kills'] = j['kills']
                 person_details['deaths'] = j['deaths']
                 person_details['assists'] = j['assists']
-                person_details['KDA'] = round((j['kills'] + j['assists']) / j['deaths'], 2)
+                if j['deaths'] == 0:
+                    person_details['KDA'] = 'Perfect'
+                else:
+                    person_details['KDA'] = round((j['kills'] + j['assists']) / j['deaths'], 2)
                 person_details['Dealt_damage'] = j['totalDamageDealtToChampions']
                 person_details['CS'] = j['totalMinionsKilled']
                 person_details['match_result'] =  j['win']
 
                 game_details[j['summonerName']] = person_details
             self.game_detail_data[i] = game_details
+
+    def calculate_win_rate(self):
+        total_win = 0
+        for i in self.match_info_dict:
+            if self.game_detail_data[i][self.summoner_info['name']]['match_result']:
+                total_win += 1
+        self.win_rate = total_win / len(self.match_list)
