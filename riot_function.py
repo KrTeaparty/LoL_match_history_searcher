@@ -87,6 +87,9 @@ class League_of_Legend():
 #             cnt += 1
 
     # 데이터 전처리 함수로 조금 더 개선하자
+    # 데이터 전처리라고 하지만 정말 이게 필요할까?
+    # 한 종류의 데이터를 너무 쪼개놔서 복잡하게 된 것 같은 느낌이 든다.
+    # 현재 코드를 보니까 안쓰는게 더 나을지도 모른다. 개선할 방법을 찾아보자.
     def make_match_data(self):
         self.game_detail_data = {}
         for i in self.match_info_dict:
@@ -105,6 +108,9 @@ class League_of_Legend():
                 person_details['Dealt_damage'] = j['totalDamageDealtToChampions']
                 person_details['CS'] = j['totalMinionsKilled']
                 person_details['match_result'] =  j['win']
+                person_details['visionScore'] = j['visionScore']
+                person_details['summonerLevel'] = j['summonerLevel']
+                person_details['goldEarned'] = j['goldEarned']
 
                 game_details[j['summonerName']] = person_details
             self.game_detail_data[i] = game_details
