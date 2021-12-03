@@ -12,53 +12,73 @@ class WindowClass(QWidget):
     def __init__(self):
         super().__init__()
         self.l = rf.League_of_Legend()
+        self.Prev_match = QTableWidget()
+        self.Next_match = QTableWidget()
         self.setupUI()
         self.show()
     
     def setupUI(self):
-        #self.setupUi(self)
         self.setGeometry(600, 200, 1400, 700)
         self.setWindowTitle('LoL 전적 검색기')
         
+        # 좌측 위젯
         self.SummonerName = QLineEdit()
-        self.ResetButton = QPushButton('초기화')
         self.SearchButton = QPushButton('전적 검색')
-        self.MasteryButton = QPushButton('숙련도 확인')
+        self.PreviousButton = QPushButton('이전 페이지')
+        self.NextButton = QPushButton('다음 페이지')
         self.ResultTable = QTableWidget()
         self.ResultTable.setSelectionMode(QAbstractItemView.SingleSelection)
         self.ResultTable.setEditTriggers(QAbstractItemView.NoEditTriggers) # 표의 내용을 변경할 수 없도록 설정
+        
+        # 우측 위젯
         self.DetailTable = QTableWidget()
+        self.DetailTable.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.DetailTable.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.win_rate_table = QTableWidget()
+        self.win_rate_table.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.win_rate_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+
+
 
         # 이벤트 추가
         self.SearchButton.clicked.connect(self.display_match)
-        self.MasteryButton.clicked.connect(self.display_mastery)
+        self.PreviousButton.clicked.connect(self.display_previous_match)
+        self.NextButton.clicked.connect(self.display_next_match)
         self.ResultTable.cellClicked.connect(self.display_game_detail)
 
-        # 그래프 캔버스
+        # 그래프 캔버스 - 우측
         self.fig = plt.Figure()
         self.canvas = FigureCanvas(self.fig)      
         
         # 좌측 레이아웃
         leftLayout = QVBoxLayout()
-        leftLayout.addWidget(self.SummonerName)
-        leftLayout.addWidget(self.ResultTable)
-        
+        # 좌측 - 입력 및 검색 버튼
+        leftLayout_Input = QHBoxLayout()
+        leftLayout_Input.addWidget(self.SummonerName)
+        leftLayout_Input.addWidget(self.SearchButton)
+        # 좌측 - 결과 테이블
+        leftLayout_Table = QVBoxLayout()
+        leftLayout_Table.addWidget(self.ResultTable)
+        # 좌측 - 이전 및 다음 페이지 버튼
+        leftLayout_Button = QHBoxLayout()
+        leftLayout_Button.addWidget(self.PreviousButton)
+        leftLayout_Button.addWidget(self.NextButton)
+        # 좌측 - 레이아웃 합치기
+        leftLayout.addLayout(leftLayout_Input, stretch = 1)
+        leftLayout.addLayout(leftLayout_Table, stretch = 1)
+        leftLayout.addLayout(leftLayout_Button, stretch = 1)
 
         # 우측 레이아웃
         rightLayout = QVBoxLayout()
-        rightLayout_Button = QHBoxLayout()
-        rightLayout_Fig = QVBoxLayout()
-        rightLayout_Detail = QVBoxLayout()
-        # 우측 - 버튼 레이아웃
-        rightLayout_Button.addWidget(self.ResetButton)
-        rightLayout_Button.addWidget(self.SearchButton)
-        rightLayout_Button.addWidget(self.MasteryButton)
+        
         # 우측 - 게임 상세 정보 레이아웃
+        rightLayout_Detail = QVBoxLayout()
         rightLayout_Detail.addWidget(self.DetailTable)
         # 우측 - 승률 원그래프 레이아웃
-        rightLayout_Fig.addWidget(self.canvas)
+        rightLayout_Fig = QHBoxLayout()
+        rightLayout_Fig.addWidget(self.canvas, stretch = 1)
+        rightLayout_Fig.addWidget(self.win_rate_table, stretch = 1)
         # 우측 - 레이아웃들 합치기
-        rightLayout.addLayout(rightLayout_Button, stretch = 1)
         rightLayout.addLayout(rightLayout_Fig, stretch = 1)
         rightLayout.addLayout(rightLayout_Detail, stretch = 1)
 
@@ -81,7 +101,7 @@ class WindowClass(QWidget):
             # 새로운 창을 띄워서 에러메세지가 나오도록 변경할 것
             self.SummonerName.clear()
         else:
-            self.l.get_match_information(self.l.summoner_info['name'])
+            self.l.get_match_information()
             column_headers = ['승패', '챔피언', '게임모드','킬', '데스', '어시', 'KDA', '게임시간']
             temp_list = [0 for i in range(len(column_headers))]
 
@@ -93,15 +113,12 @@ class WindowClass(QWidget):
             for i in self.l.match_info_dict:
                 temp_list[2] = self.l.match_info_dict[i]['info']['gameMode']
                 temp_list[7] = str(self.l.match_info_dict[i]['info']['gameDuration'] // 60) + '분 ' + str(self.l.match_info_dict[i]['info']['gameDuration'] % 60) + '초'
-                for j in self.l.game_detail_data[i]:
-                    if j.lower() == self.SummonerName.text().lower():
-                        temp_list[0] = "승리" if self.l.game_detail_data[i][j]['match_result'] else "패배"
-                        temp_list[1] = self.l.game_detail_data[i][j]['champName']
-                        temp_list[3] = self.l.game_detail_data[i][j]['kills']
-                        temp_list[4] = self.l.game_detail_data[i][j]['deaths']
-                        temp_list[5] = self.l.game_detail_data[i][j]['assists']
-                        temp_list[6] = self.l.game_detail_data[i][j]['KDA']
-                #print(temp_list)
+                temp_list[0] = "승리" if self.l.game_detail_data[i][self.l.summoner_info['name']]['match_result'] else "패배"
+                temp_list[1] = self.l.game_detail_data[i][self.l.summoner_info['name']]['champName']
+                temp_list[3] = self.l.game_detail_data[i][self.l.summoner_info['name']]['kills']
+                temp_list[4] = self.l.game_detail_data[i][self.l.summoner_info['name']]['deaths']
+                temp_list[5] = self.l.game_detail_data[i][self.l.summoner_info['name']]['assists']
+                temp_list[6] = self.l.game_detail_data[i][self.l.summoner_info['name']]['KDA']
                 for k, v in enumerate(temp_list):
                     self.ResultTable.setItem(row, k, QTableWidgetItem(str(v)))
                     if temp_list[0] == '승리': # 표의 색상 처리
@@ -113,37 +130,14 @@ class WindowClass(QWidget):
             self.ResultTable.resizeRowsToContents()                                         # 열 높이 조정
             self.display_figure()
 
-    def display_mastery(self):
-        if self.l.valid_name == 1:
-            pass
-        else:
-            self.l.get_summoner_information(self.SummonerName.text())
-
-        if self.l.valid_name == 0:
-            # 마찬가지로 에러 창을 띄우도록 변경
-            self.SummonerName.clear()
-        else:
-            self.l.get_champion_mastery()
-            column_headers = ['챔피언', '숙련도 레벨', '숙련도 점수']
-
-            self.ResultTable.setRowCount(len(self.l.champ_mastery))
-            self.ResultTable.setColumnCount(len(column_headers))
-            self.ResultTable.setHorizontalHeaderLabels(column_headers)
-
-            for i in range(len(self.l.champ_mastery)):
-                self.ResultTable.setItem(i, 0, QTableWidgetItem(self.l.champion_name_key_dict[str(self.l.champ_mastery[i]['championId'])]['ko']))
-                self.ResultTable.setItem(i, 1, QTableWidgetItem(str(self.l.champ_mastery[i]['championLevel'])))
-                self.ResultTable.setItem(i, 2, QTableWidgetItem(str(self.l.champ_mastery[i]['championPoints'])))
-            self.ResultTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)   # column 너비 조정
-            self.ResultTable.resizeRowsToContents()                                         # 열 높이 조정
-    
     def display_figure(self):
+        self.fig.clear()
         ax = self.fig.add_subplot()
         ax.pie(x = [self.l.win_rate, 1 - self.l.win_rate], labels = ['Win', 'Lose'], autopct='%.2f%%', colors = ['skyblue','lightcoral'], startangle = 90)
         ax.axis('equal')
         self.canvas.draw()
 
-    def display_game_detail(self): # 숙련도 확인하고 행을 선택하면 그에 해당하는 경기 데이터를 출력하는 버그가 있음
+    def display_game_detail(self):
         # game_detail_data = {match_id : {닉네임 : {Champion_Level, champName, kills, deaths, assists, KDA, Dealt_damage, CS, match_result, visionScore, summonerLevel, goldEarned}}}
         column_headers = ['닉네임', '레벨','챔피언','챔레벨','킬', '데스','어시','KDA','피해량','cs','시야점수','골드']
         self.DetailTable.setRowCount(10)
@@ -176,6 +170,19 @@ class WindowClass(QWidget):
             row += 1
         self.DetailTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)   # column 너비 조정
         self.DetailTable.resizeRowsToContents()
+    
+    def display_previous_match(self):
+        if self.l.page == 0:
+            return 0
+        self.l.page -= 20
+        self.display_match()
+    
+    def display_next_match(self):
+        if self.l.page == 100:
+            return 0
+        self.l.page += 20
+        self.display_match()
+
 
 
 
