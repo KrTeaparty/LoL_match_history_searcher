@@ -129,6 +129,7 @@ class WindowClass(QWidget):
             self.ResultTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)   # column 너비 조정
             self.ResultTable.resizeRowsToContents()                                         # 열 높이 조정
             self.display_figure()
+            self.display_win_rate_teammate()
 
     def display_figure(self):
         self.fig.clear()
@@ -183,6 +184,36 @@ class WindowClass(QWidget):
         self.l.page += 20
         self.display_match()
 
+    def display_win_rate_teammate(self):
+        column_headers = ['닉네임', '총 판수', '이긴 판수', '승률']
+        player_count = 0
+        player_name_list = []
+        for k, v in self.l.play_with.items():
+            if v['count'] >= 2:
+                player_count += 1
+                player_name_list.append(k)
+
+        self.win_rate_table.setRowCount(player_count)
+        self.win_rate_table.setColumnCount(len(column_headers))
+        self.win_rate_table.setHorizontalHeaderLabels(column_headers)
+
+        temp_list = [0 for i in range(len(column_headers))]
+        row = 0
+        for i in player_name_list:
+            temp_list[0] = i
+            temp_list[1] = self.l.play_with[i]['count']
+            temp_list[2] = self.l.play_with[i]['win']
+            temp_list[3] = round(self.l.play_with[i]['win'] / self.l.play_with[i]['count'] * 100, 2) 
+
+            for k, v in enumerate(temp_list):
+                # float형도 그냥 쓸 수 있도록 하는 부분임
+                item = QTableWidgetItem(v)
+                item.setData(Qt.DisplayRole, v)
+                self.win_rate_table.setItem(row, k, item)
+            row += 1
+        self.win_rate_table.sortItems(1, order = Qt.DescendingOrder)
+        self.win_rate_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.win_rate_table.resizeRowsToContents()
 
 
 

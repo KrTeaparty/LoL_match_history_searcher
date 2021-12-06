@@ -70,6 +70,7 @@ class League_of_Legend():
             self.match_info_dict[i] = res
         self.make_match_data()
         self.calculate_win_rate()
+        self.who_played_with()
         
 
     # 데이터 전처리 함수로 조금 더 개선하자
@@ -107,3 +108,20 @@ class League_of_Legend():
             if self.game_detail_data[i][self.summoner_info['name']]['match_result']:
                 total_win += 1
         self.win_rate = total_win / len(self.match_list)
+    
+    def who_played_with(self):
+        self.play_with = {}
+        for i in self.match_info_dict:
+            for v in self.game_detail_data[i]:
+                if (self.game_detail_data[i][v]['match_result'] == self.game_detail_data[i][self.summoner_info['name']]['match_result']) and (v != self.summoner_info['name']):
+                    if v in self.play_with:
+                        self.play_with[v]['count'] += 1
+                    else:
+                        self.play_with[v] = {}
+                        self.play_with[v]['count'] = 1
+                        self.play_with[v]['win'] = 0
+
+                    if self.game_detail_data[i][v]['match_result']:
+                        self.play_with[v]['win'] += 1
+
+
