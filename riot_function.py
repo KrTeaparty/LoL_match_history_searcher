@@ -9,7 +9,7 @@ from PyQt5 import uic
 
 class League_of_Legend():
     def __init__(self):
-        self.api_key = '내 api key'
+        self.api_key = '내 API Key'
         self.valid_name = 0
         self.make_champion_name_key_dict()
         self.page = 0

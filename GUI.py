@@ -98,7 +98,6 @@ class WindowClass(QWidget):
             self.l.get_summoner_information(self.SummonerName.text())
 
         if self.l.valid_name == 0:
-            # 새로운 창을 띄워서 에러메세지가 나오도록 변경할 것
             self.SummonerName.clear()
         else:
             self.l.get_match_information()
@@ -148,6 +147,8 @@ class WindowClass(QWidget):
         cur_match = self.l.match_list[self.ResultTable.currentRow()]
         temp_list = [0 for i in range(len(column_headers))]
         row = 0
+        best_player = [0, 0]
+        worst_player = [0, 1000]
         for i in self.l.game_detail_data[cur_match]:
             temp_list[0] = i
             temp_list[1] = self.l.game_detail_data[cur_match][i]['summonerLevel']
@@ -168,7 +169,22 @@ class WindowClass(QWidget):
                     self.DetailTable.item(row, k).setBackground(QColor(135,206,235))
                 else:
                     self.DetailTable.item(row, k).setBackground(QColor(240,128,128))
+            
+            if self.l.game_detail_data[cur_match][i]['match_result']:
+                if temp_list[7] == 'Perfect':
+                    best_player[0] = row
+                    best_player[1] = 100
+                elif best_player[1] <= temp_list[7]:
+                    best_player[0] = row
+                    best_player[1] = temp_list[7]
+            else:
+                if worst_player[1] >= temp_list[7]:
+                    worst_player[0] = row
+                    worst_player[1] = temp_list[7]
             row += 1
+
+        self.DetailTable.item(best_player[0], 0).setFont(QFont('Gulim', 9, QFont.Bold))
+        self.DetailTable.item(worst_player[0], 0).setFont(QFont('Gulim', 9, QFont.Bold, italic = True))
         self.DetailTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)   # column 너비 조정
         self.DetailTable.resizeRowsToContents()
     
@@ -214,6 +230,7 @@ class WindowClass(QWidget):
         self.win_rate_table.sortItems(1, order = Qt.DescendingOrder)
         self.win_rate_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.win_rate_table.resizeRowsToContents()
+
 
 
 
