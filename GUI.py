@@ -22,19 +22,19 @@ class WindowClass(QWidget):
         self.setWindowTitle('LoL 전적 검색기')
         
         # 좌측 위젯
-        self.SummonerName = QLineEdit()
-        self.SearchButton = QPushButton('전적 검색')
-        self.PreviousButton = QPushButton('이전 페이지')
-        self.NextButton = QPushButton('다음 페이지')
-        self.ResultTable = QTableWidget()
+        self.SummonerName = QLineEdit() # 소환사명 입력창
+        self.SearchButton = QPushButton('전적 검색') # 검색 버튼
+        self.PreviousButton = QPushButton('이전 페이지') # 이전 페이지 버튼
+        self.NextButton = QPushButton('다음 페이지') # 다음 페이지 버튼
+        self.ResultTable = QTableWidget() # 전적 검색 결과 출력용 테이블 위젯
         self.ResultTable.setSelectionMode(QAbstractItemView.SingleSelection)
         self.ResultTable.setEditTriggers(QAbstractItemView.NoEditTriggers) # 표의 내용을 변경할 수 없도록 설정
         
         # 우측 위젯
-        self.DetailTable = QTableWidget()
+        self.DetailTable = QTableWidget() # 게임 상세 정보 출력용 테이블 위젯
         self.DetailTable.setSelectionMode(QAbstractItemView.SingleSelection)
         self.DetailTable.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.win_rate_table = QTableWidget()
+        self.win_rate_table = QTableWidget() # 같이 플레이한 소환사들과의 승률 출력용 테이블 위젯
         self.win_rate_table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.win_rate_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
@@ -48,7 +48,7 @@ class WindowClass(QWidget):
 
         # 그래프 캔버스 - 우측
         self.fig = plt.Figure()
-        self.canvas = FigureCanvas(self.fig)      
+        self.canvas = FigureCanvas(self.fig) # 원 그래프 출력용 캔버스
         
         # 좌측 레이아웃
         leftLayout = QVBoxLayout()
@@ -97,6 +97,7 @@ class WindowClass(QWidget):
         else:
             self.l.get_summoner_information(self.SummonerName.text())
 
+        # 해당하는 소환사가 없다면 입력창을 비운다.
         if self.l.valid_name == 0:
             self.SummonerName.clear()
         else:
@@ -104,8 +105,10 @@ class WindowClass(QWidget):
             column_headers = ['승패', '챔피언', '게임모드','킬', '데스', '어시', 'KDA', '게임시간']
             temp_list = [0 for i in range(len(column_headers))]
 
+            # 테이블 위젯을 사용하기 위해 행, 열 갯수를 설정한다.
             self.ResultTable.setRowCount(len(self.l.match_list))
             self.ResultTable.setColumnCount(len(column_headers))
+            # Column 명을 지정한다.
             self.ResultTable.setHorizontalHeaderLabels(column_headers)
             row = 0
             
@@ -120,7 +123,7 @@ class WindowClass(QWidget):
                 temp_list[6] = self.l.game_detail_data[i][self.l.summoner_info['name']]['KDA']
                 for k, v in enumerate(temp_list):
                     self.ResultTable.setItem(row, k, QTableWidgetItem(str(v)))
-                    if temp_list[0] == '승리': # 표의 색상 처리
+                    if temp_list[0] == '승리': # 셀의 색상 처리
                         self.ResultTable.item(row, k).setBackground(QColor(135,206,235))
                     else:
                         self.ResultTable.item(row, k).setBackground(QColor(240,128,128))

@@ -15,6 +15,7 @@ class League_of_Legend():
         self.page = 0
         self.match_info_dict = {}
 
+    # URL을 받으면 해당 URL로 api 요청을 한다.
     def req_api(self, URL):
         res = req.get(URL, headers = {'X-Riot-Token': self.api_key})
 
